@@ -66,7 +66,7 @@ gcloud iam service-accounts add-iam-policy-binding ${PROJECT_NUMBER}-compute@dev
 
 ### Artifact Registry リポジトリの作成
 ```bash
-gcloud artifacts repositories create cloud-run-source-deploy \
+gcloud artifacts repositories create gh-actions-demo-service \
     --repository-format=docker \
     --location=asia-northeast1
 ```

@@ -39,7 +39,7 @@ env:
   REGION: ${{ vars.REGION }}
   SERVICE: ${{ vars.SERVICE }}
   WORKLOAD_IDENTITY_PROVIDER: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
-  SERVICE_ACCOUNT: ${{ vars.SERVICE_ACCOUNT }}
+  SERVICE_ACCOUNT: ${{ vars.CLOUD_BUILD_SA_ID }}
 
 jobs:
   deploy:

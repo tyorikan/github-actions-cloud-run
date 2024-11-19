@@ -55,9 +55,10 @@ gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/run.sourceDeveloper
 ```
 上記 SA を、 **サービス アカウント ユーザー** の権限をもつ、Default compute service account のメンバーに追加する（Cloud Build のデフォルト実行ユーザとして使われるため）  
-ポリシーによっては Default compute service account に何も権限がついてないので、 **Cloud Run ソース デベロッパー** 権限を追加する。
+ポリシーによっては Default compute service account に何も権限がついてないので、 **Cloud Run ソース デベロッパー** と **Cloud Run ビルダー** 権限を追加する。
 ```bash
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com --role=roles/run.sourceDeveloper
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com --role=roles/run.builder
 gcloud iam service-accounts add-iam-policy-binding ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
   --member="serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com" \
   --role="roles/iam.serviceAccountUser"

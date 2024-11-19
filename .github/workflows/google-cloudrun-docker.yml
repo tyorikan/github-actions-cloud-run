@@ -65,11 +65,8 @@ jobs:
           service_account: '${{ env.SERVICE_ACCOUNT }}'
 
       - name: 'Docker Auth'
-        uses: 'docker/login-action@v3'
-        with:
-          username: 'oauth2accesstoken'
-          password: '${{ steps.auth.outputs.auth_token }}'
-          registry: '${{ env.REGION }}-docker.pkg.dev'
+        run: |-
+          gcloud auth configure-docker ${{{ env.REGION }}-docker.pkg.dev
 
       - name: 'Build and Push Container'
         run: |-

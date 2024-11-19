@@ -117,4 +117,4 @@ gcloud iam service-accounts add-iam-policy-binding cloud-build-runner@${PROJECT_
 ```
 
 ## 試してみる
-main ブランチに何か変更をコミットしましょう
+**main ブランチに何か変更をコミットしましょう**

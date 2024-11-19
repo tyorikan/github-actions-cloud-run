@@ -1,21 +1,5 @@
 # GitHub Actions Cloud Run deploy
 
-## Prerequisite
-
-* Enable the Cloud Run and related APIs
-
-```bash
-gcloud services enable run.googleapis.com \
-  cloudbuild.googleapis.com \
-  iamcredentials.googleapis.com \
-  artifactregistry.googleapis.com \
-  compute.googleapis.com \
-  iam.googleapis.com \
-  iamcredentials.googleapis.com \
-  sts.googleapis.com  \
-  secretmanager.googleapis.com
-```
-
 <walkthrough-project-setup>
 </walkthrough-project-setup>
 
@@ -41,6 +25,7 @@ gcloud config set project [YOUR_PROJECT_ID]
 export PROJECT_ID=$(gcloud config get-value project)
 export PROJECT_NUMBER=$(gcloud projects list --filter="$(gcloud config get-value project)" --format="value(PROJECT_NUMBER)")
 export GITHUB_ACCOUNT=[YOUR_GITHUB_ACCOUNT]
+export CR_DEPLOY_SA=cr-deployer
 ```
 
 ## API の有効化
@@ -48,37 +33,25 @@ export GITHUB_ACCOUNT=[YOUR_GITHUB_ACCOUNT]
 ```bash
 gcloud services enable run.googleapis.com \
   cloudbuild.googleapis.com \
-  iamcredentials.googleapis.com \
   artifactregistry.googleapis.com \
   compute.googleapis.com \
   iam.googleapis.com \
   iamcredentials.googleapis.com \ 
-  sts.googleapis.com  \
-  secretmanager.googleapis.com
+  secretmanager.googleapis.com \
+  cloudresourcemanager.googleapis.com \
+  sts.googleapis.com
 ```
 
 ## IAM の準備
-本ハンズオンで使用するサービス アカウントを作成します。
-Cloud Build 用のサービスアカウントの作成
+Cloud Run デプロイ用のサービスアカウントの作成
 ```bash
-gcloud iam service-accounts create cloud-build-runner 
-```
-2. Cloud Run 用のサービスアカウントの作成
-```bash
-gcloud iam service-accounts create gh-actions-demo-service
+gcloud iam service-accounts create ${CR_DEPLOY_SA}
 ```
 
 ### Role の付与
-Cloud Build で利用するサービス アカウントに **Cloud Build サービス アカウント** ・ **Cloud Deploy オペレーター** ・  **Cloud Run 管理者** ・ **サービス アカウント ユーザー** の権限を割り当てます。
+実行するサービス アカウントに **Cloud Run 管理者** の権限を割り当てます。
 ```bash
-gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:cloud-build-runner@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/cloudbuild.builds.builder
-gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:cloud-build-runner@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/run.admin
-gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:cloud-build-runner@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/iam.serviceAccountUser
-```
-
-Cloud Build の[サービス エージェント](https://cloud.google.com/iam/docs/service-account-types?hl=ja#service-agents)に **Secret Manager 管理者** の権限を割り当てます。この権限は GitHub Actions が Cloud Build のトリガーを起動する際に使用します。
-```bash
-gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:service-$PROJECT_NUMBER@gcp-sa-cloudbuild.iam.gserviceaccount.com --role=roles/secretmanager.admin
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/run.admin
 ```
 
 ## GitHub の準備
@@ -93,7 +66,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:servi
 | PROJECT_ID | <walkthrough-project-id/> |数字|
 | REGION | asia-northeast1 ||
 | SERVICE | gh-actions-demo-service ||
-| CLOUD_BUILD_SA_ID | cloud-build-runner@<walkthrough-project-id>.iam.gserviceaccount.com|"@"の後にプロジェクト ID が含まれているか|
+| CLOUD_BUILD_SA_ID | cr-deployer@<walkthrough-project-id>.iam.gserviceaccount.com|"@"の後にプロジェクト ID が含まれているか|
 | WORKLOAD_IDENTITY_PROVIDER | projects/<walkthrough-project-number>/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider |"projects/"の後にプロジェクト番号が入る|
 
 ## Workload Idenitty 連携の準備
@@ -108,10 +81,11 @@ ID プール名|github-actions-pool
 発行元|https://token.actions.githubusercontent.com
 オーディエンス|デフォルト
 属性のマッピング ((Google*)=(OIDC*))|google.subject=assertion.sub attribute.repository_owner=assertion.repository_owner
+属性条件|assertion.repository_owner=='YOUR_GITHUB_ACCOUNT'
 
 2. GitHub Actions から Cloud Build を呼び出すため、Cloud Build で利用するサービス アカウントに対し、Workload Identity ユーザーの権限を追加します。
 ```bash
-gcloud iam service-accounts add-iam-policy-binding cloud-build-runner@${PROJECT_ID}.iam.gserviceaccount.com \
+gcloud iam service-accounts add-iam-policy-binding ${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com \
     --role=roles/iam.workloadIdentityUser \
     --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-actions-pool/attribute.repository_owner/${GITHUB_ACCOUNT}"
 ```

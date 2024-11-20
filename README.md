@@ -92,6 +92,7 @@ gcloud artifacts repositories create ${RUN_SERVICE} \
 | CLOUD_BUILD_SA_ID | cr-deployer@<walkthrough-project-id>.iam.gserviceaccount.com|"@"の後にプロジェクト ID が含まれているか|
 | Cloud_RAN_SA_ID | gh-actions-demo-service@<walkthrough-project-id>.iam.gserviceaccount.com|"@"の後にプロジェクト ID が含まれているか|
 | WORKLOAD_IDENTITY_PROVIDER | projects/<walkthrough-project-number>/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider |"projects/"の後にプロジェクト番号が入る|
+| TOPIC_ID | gh-actions-demo-topic ||
 
 ## Workload Idenitty 連携の準備
 GitHub Actions で Cloud Build を呼び出すための GitHub Actions の設定を行います。

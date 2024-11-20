@@ -28,6 +28,7 @@ export GITHUB_ACCOUNT=[YOUR_GITHUB_ACCOUNT]
 export CR_DEPLOY_SA=cr-deployer
 export CR_EXEC_SA=gh-actions-demo-service
 export RUN_SERVICE=$CR_EXEC_SA
+export PUBSUB_TOPIC=gh-actions-demo-topic
 ```
 
 ## API の有効化
@@ -111,6 +112,11 @@ ID プール名|github-actions-pool
 gcloud iam service-accounts add-iam-policy-binding ${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com \
     --role=roles/iam.workloadIdentityUser \
     --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-actions-pool/attribute.repository_owner/${GITHUB_ACCOUNT}"
+```
+
+## 利用する Pub/Sub トピックを作成する
+```bash
+gcloud pubsub topics create ${PUBSUB_TOPIC}
 ```
 
 ## 試してみる

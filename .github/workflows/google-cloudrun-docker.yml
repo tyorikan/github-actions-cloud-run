@@ -41,6 +41,7 @@ env:
   WORKLOAD_IDENTITY_PROVIDER: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
   SERVICE_ACCOUNT: ${{ vars.CLOUD_BUILD_SA_ID }}
   CR_SERVICE_ACCOUNT: ${{ vars.Cloud_RAN_SA_ID }}
+  TOPIC_ID: ${{ vars.TOPIC_ID }}
 
 jobs:
   deploy:
@@ -82,6 +83,8 @@ jobs:
             --region=${{ env.REGION }} \
             --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.SERVICE }}:${{ github.sha }} \
             --service-account=${{ env.CR_SERVICE_ACCOUNT }} \
+            --set-env-vars "PROJECT_ID=${{ env.PROJECT_ID }}" \
+            --set-env-vars "TOPIC_ID=${{ env.TOPIC_ID }}" \
             --project=${{ env.PROJECT_ID }}
 
       - name: 'Show output'

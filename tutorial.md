@@ -63,9 +63,9 @@ gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/iam.serviceAccountUser
 ```
 
-Cloud Run 実行ユーザとなるサービス アカウントに、必要に応じた権限を付与。
+Cloud Run 実行ユーザとなるサービス アカウントに、必要に応じた権限を付与。  
+*e.g. Pub/Sub パブリッシャーと BigQuery データ編集者 Role を付与*
 ```bash
-# e.g. Pub/Sub パブリッシャーと BigQuery データ編集者 Role を付与
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_EXEC_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/pubsub.publisher
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_EXEC_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/bigquery.dataEditor
 ```

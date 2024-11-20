@@ -40,7 +40,7 @@ env:
   SERVICE: ${{ vars.SERVICE }}
   WORKLOAD_IDENTITY_PROVIDER: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
   SERVICE_ACCOUNT: ${{ vars.CLOUD_BUILD_SA_ID }}
-  CR_SERVICE_ACCOUNT: ${{ vars.Cloud_RAN_SA_ID }}@${{ var.PROJECT_ID }}.iam.gserviceaccount.com
+  CR_SERVICE_ACCOUNT: ${{ vars.Cloud_RAN_SA_ID }}@${{ vars.PROJECT_ID }}.iam.gserviceaccount.com
 
 jobs:
   deploy:

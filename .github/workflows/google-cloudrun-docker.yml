@@ -76,7 +76,7 @@ jobs:
           docker push "${DOCKER_TAG}"
 
       - name: 'Deploy to Cloud Run'
-        run |-
+        run: |-
           gcloud run deploy ${{ env.SERVICE }} \
             --no-allow-unauthenticated \
             --region=${{ env.REGION }} \

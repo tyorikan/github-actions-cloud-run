@@ -1,12 +1,12 @@
-# This workflow will deploy source code on Cloud Run when a commit is pushed to
-# the "main" branch.
+# This workflow build and push a Docker container to Google Artifact Registry
+# and deploy it on Cloud Run when a commit is pushed to the "main"
+# branch.
 #
 # To configure this workflow:
 #
 # 1. Enable the following Google Cloud APIs:
 #
 #    - Artifact Registry (artifactregistry.googleapis.com)
-#    - Cloud Build (cloudbuild.googleapis.com)
 #    - Cloud Run (run.googleapis.com)
 #    - IAM Credentials API (iamcredentials.googleapis.com)
 #
@@ -20,18 +20,18 @@
 #    permissions on Google Cloud:
 #
 #    - Artifact Registry Administrator (roles/artifactregistry.admin)
-#    - Cloud Run Source Developer (roles/run.sourceDeveloper)
+#    - Cloud Run Developer (roles/run.developer)
 #
 #    You can learn more about setting IAM permissions at
-#    https://cloud.google.com/iam/docs/manage-access-other-resources.
+#    https://cloud.google.com/iam/docs/manage-access-other-resources
 #
 # 3. Change the values in the "env" block to match your values.
 
-name: 'Deploy to Cloud Run from Source'
+name: 'Build and Deploy to Cloud Run'
 
 on:
   push:
-    branches-ignore:
+    branches:
       - '**'
 
 env:
@@ -40,6 +40,8 @@ env:
   SERVICE: ${{ vars.SERVICE }}
   WORKLOAD_IDENTITY_PROVIDER: ${{ vars.WORKLOAD_IDENTITY_PROVIDER }}
   SERVICE_ACCOUNT: ${{ vars.CLOUD_BUILD_SA_ID }}
+  CR_SERVICE_ACCOUNT: ${{ vars.Cloud_RAN_SA_ID }}
+  TOPIC_ID: ${{ vars.TOPIC_ID }}
 
 jobs:
   deploy:
@@ -64,13 +66,26 @@ jobs:
           workload_identity_provider: '${{ env.WORKLOAD_IDENTITY_PROVIDER }}'
           service_account: '${{ env.SERVICE_ACCOUNT }}'
 
+      - name: 'Docker Auth'
+        run: |-
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: 'Build and Push Container'
+        run: |-
+          DOCKER_TAG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.SERVICE }}:${{ github.sha }}"
+          docker build --tag "${DOCKER_TAG}" .
+          docker push "${DOCKER_TAG}"
+
       - name: 'Deploy to Cloud Run'
-        uses: 'google-github-actions/deploy-cloudrun@v2'
-        with:
-          service: '${{ env.SERVICE }}'
-          region: '${{ env.REGION }}'
-          project_id: '${{ env.PROJECT_ID }}'
-          source: './'
+        run: |-
+          gcloud run deploy ${{ env.SERVICE }} \
+            --no-allow-unauthenticated \
+            --region=${{ env.REGION }} \
+            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.SERVICE }}:${{ github.sha }} \
+            --service-account=${{ env.CR_SERVICE_ACCOUNT }} \
+            --set-env-vars "PROJECT_ID=${{ env.PROJECT_ID }}" \
+            --set-env-vars "TOPIC_ID=${{ env.TOPIC_ID }}" \
+            --project=${{ env.PROJECT_ID }}
 
       - name: 'Show output'
         run: |-

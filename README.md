@@ -26,6 +26,9 @@ export PROJECT_ID=$(gcloud config get-value project)
 export PROJECT_NUMBER=$(gcloud projects list --filter="$(gcloud config get-value project)" --format="value(PROJECT_NUMBER)")
 export GITHUB_ACCOUNT=[YOUR_GITHUB_ACCOUNT]
 export CR_DEPLOY_SA=cr-deployer
+export CR_EXEC_SA=gh-actions-demo-service
+export RUN_SERVICE=$CR_EXEC_SA
+export PUBSUB_TOPIC=gh-actions-demo-topic
 ```
 
 ## API の有効化
@@ -47,26 +50,29 @@ Cloud Run デプロイ用のサービスアカウントの作成
 ```bash
 gcloud iam service-accounts create ${CR_DEPLOY_SA}
 ```
+Cloud Run 実行用のサービスアカウントの作成
+```bash
+gcloud iam service-accounts create ${CR_EXEC_SA}
+```
 
 ### Role の付与
-実行するサービス アカウントに **Cloud Run 管理者** と **Cloud Run ソース デベロッパー** の権限を割り当てます。
+GitHub Actions 実行で利用するサービス アカウントに **Cloud Run 管理者** と **Artifact Registry 書き込み** の権限を割り当てます。サービスアカウントも指定する場合、**サービス アカウント ユーザー**権限も追加。
 ```bash
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/run.admin
-gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/run.sourceDeveloper
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/artifactregistry.writer
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/iam.serviceAccountUser
 ```
-上記 SA を、 **サービス アカウント ユーザー** の権限をもつ、Default compute service account のメンバーに追加する（Cloud Build のデフォルト実行ユーザとして使われるため）  
-ポリシーによっては Default compute service account に何も権限がついてないので、 **Cloud Run ソース デベロッパー** と **Cloud Run ビルダー** 権限を追加する。
+
+Cloud Run 実行ユーザとなるサービス アカウントに、必要に応じた権限を付与。
 ```bash
-gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com --role=roles/run.sourceDeveloper
-gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com --role=roles/run.builder
-gcloud iam service-accounts add-iam-policy-binding ${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
-  --member="serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com" \
-  --role="roles/iam.serviceAccountUser"
+# e.g. Pub/Sub パブリッシャーと BigQuery データ編集者 Role を付与
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_EXEC_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/pubsub.publisher
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_EXEC_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/bigquery.dataEditor
 ```
 
 ### Artifact Registry リポジトリの作成
 ```bash
-gcloud artifacts repositories create cloud-run-source-deploy \
+gcloud artifacts repositories create ${RUN_SERVICE} \
     --repository-format=docker \
     --location=asia-northeast1
 ```
@@ -84,7 +90,9 @@ gcloud artifacts repositories create cloud-run-source-deploy \
 | REGION | asia-northeast1 ||
 | SERVICE | gh-actions-demo-service ||
 | CLOUD_BUILD_SA_ID | cr-deployer@<walkthrough-project-id>.iam.gserviceaccount.com|"@"の後にプロジェクト ID が含まれているか|
+| Cloud_RAN_SA_ID | gh-actions-demo-service@<walkthrough-project-id>.iam.gserviceaccount.com|"@"の後にプロジェクト ID が含まれているか|
 | WORKLOAD_IDENTITY_PROVIDER | projects/<walkthrough-project-number>/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider |"projects/"の後にプロジェクト番号が入る|
+| TOPIC_ID | gh-actions-demo-topic ||
 
 ## Workload Idenitty 連携の準備
 GitHub Actions で Cloud Build を呼び出すための GitHub Actions の設定を行います。
@@ -105,6 +113,11 @@ ID プール名|github-actions-pool
 gcloud iam service-accounts add-iam-policy-binding ${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com \
     --role=roles/iam.workloadIdentityUser \
     --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/github-actions-pool/attribute.repository_owner/${GITHUB_ACCOUNT}"
+```
+
+## 利用する Pub/Sub トピックを作成する
+```bash
+gcloud pubsub topics create ${PUBSUB_TOPIC}
 ```
 
 ## 試してみる

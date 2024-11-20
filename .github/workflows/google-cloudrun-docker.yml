@@ -81,7 +81,7 @@ jobs:
             --no-allow-unauthenticated \
             --region=${{ env.REGION }} \
             --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE }}/${{ env.SERVICE }}:${{ github.sha }} \
-            --service-account=${{ env.CR_SERVICE_ACCOUNT }}
+            --service-account=${{ env.CR_SERVICE_ACCOUNT }} \
             --project=${{ env.PROJECT_ID }}
 
       - name: 'Show output'

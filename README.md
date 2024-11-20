@@ -55,10 +55,11 @@ gcloud iam service-accounts create ${CR_EXEC_SA}
 ```
 
 ### Role の付与
-GitHub Actions 実行で利用するサービス アカウントに **Cloud Run 管理者** と **Artifact Registry 書き込み** の権限を割り当てます。
+GitHub Actions 実行で利用するサービス アカウントに **Cloud Run 管理者** と **Artifact Registry 書き込み** の権限を割り当てます。サービスアカウントも指定する場合、**サービス アカウント ユーザー**権限も追加。
 ```bash
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/run.admin
 gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/artifactregistry.writer
+gcloud projects add-iam-policy-binding $PROJECT_ID --member serviceAccount:${CR_DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com --role=roles/iam.serviceAccountUser
 ```
 
 Cloud Run 実行ユーザとなるサービス アカウントに、必要に応じた権限を付与。
